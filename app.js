@@ -422,7 +422,21 @@
       const colour = `<div class="flex flex-wrap gap-x-3 gap-y-3">${allColours.map((c) => `<button type="button" class="js-f-colour flex flex-col items-center gap-1 w-[52px]" data-colour="${c}" title="${c}"><span class="swatch-lg" style="background:${FAMILY_HEX[c] || '#ccc'}"></span><span class="text-[11px] text-muted leading-none">${c}</span></button>`).join('')}</div>`;
       const price = `<input id="priceRange" type="range" min="10" max="${maxPrice}" value="${maxPrice}" class="w-full">
         <div class="flex justify-between text-xs text-muted mt-2"><span>€10</span><span>Up to <b id="priceVal" class="text-ink">€${maxPrice}</b></span></div>`;
-      qs('#filterSections').innerHTML = sec('Gender', gender) + sec('Category', group) + sec('Product type', sub, false) + sec('Brand', brand) + sec('Size', size, false) + sec('Colour', colour, false) + sec('Price', price);
+      const guideCats = [['Shoes', 'group', 'Shoes'], ['Hoodies', 'sub', 'Hoodies'], ['Tracksuits', 'sub', 'Jackets'], ['T-Shirts', 'sub', 'T-Shirts'], ['Shorts', 'sub', 'Shorts'], ['Slides', 'sub', 'Slides'], ['Accessories', 'group', 'Accessories']];
+      const guide = `<div class="pb-5 mb-1 border-b-2 border-ink">
+          <p class="mega-col-title mb-2.5 flex items-center gap-2"><span class="w-5 h-5 rounded-full bg-ink text-white text-[11px] grid place-items-center">1</span> Choose a brand</p>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" class="js-guide-brand size-chip !min-w-0 !px-3 !py-1.5 !text-[13px]" data-brand="">All brands</button>
+            ${allBrands.map((b) => `<button type="button" class="js-guide-brand size-chip !min-w-0 !px-3 !py-1.5 !text-[13px]" data-brand="${b}">${b}</button>`).join('')}
+          </div>
+          <p class="mega-col-title mt-4 mb-2.5 flex items-center gap-2"><span class="w-5 h-5 rounded-full bg-ink text-white text-[11px] grid place-items-center">2</span> Choose a category</p>
+          <div class="flex flex-wrap gap-2">
+            ${guideCats.map((c) => `<button type="button" class="js-guide-cat size-chip !min-w-0 !px-3 !py-1.5 !text-[13px]" data-kind="${c[1]}" data-val="${c[2]}">${c[0]}</button>`).join('')}
+          </div>
+        </div>`;
+      qs('#filterSections').innerHTML = guide + sec('Gender', gender) + sec('Category', group) + sec('Product type', sub, false) + sec('Brand', brand) + sec('Size', size, false) + sec('Colour', colour, false) + sec('Price', price);
+      qsa('.js-guide-brand').forEach((b) => b.addEventListener('click', () => { state.brands.clear(); if (b.dataset.brand) state.brands.add(b.dataset.brand); syncControls(); apply(); }));
+      qsa('.js-guide-cat').forEach((b) => b.addEventListener('click', () => { if (b.dataset.kind === 'group') { state.groups = new Set([b.dataset.val]); state.subs.clear(); } else { state.subs = new Set([b.dataset.val]); state.groups.clear(); } syncControls(); apply(); }));
 
       qsa('#filterSections .js-acc').forEach((btn) => btn.addEventListener('click', () => {
         btn.parentElement.querySelector('.acc-body').classList.toggle('hidden');
@@ -444,6 +458,8 @@
       qsa('.js-f-brand').forEach((c) => (c.checked = state.brands.has(c.value)));
       qsa('.js-f-size').forEach((b) => b.classList.toggle('sel', state.sizes.has(b.dataset.size)));
       qsa('.js-f-colour').forEach((b) => b.classList.toggle('sel', state.colours.has(b.dataset.colour)));
+      qsa('.js-guide-brand').forEach((b) => b.classList.toggle('sel', b.dataset.brand === '' ? state.brands.size === 0 : (state.brands.size === 1 && state.brands.has(b.dataset.brand))));
+      qsa('.js-guide-cat').forEach((b) => { const on = b.dataset.kind === 'group' ? (state.subs.size === 0 && state.groups.size === 1 && state.groups.has(b.dataset.val)) : (state.groups.size === 0 && state.subs.size === 1 && state.subs.has(b.dataset.val)); b.classList.toggle('sel', on); });
     }
 
     function apply() {
